@@ -10,9 +10,10 @@ use Moose;
 use warnings;
 use version;
 use Carp;
+use List::MoreUtils qw/any/;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.0.1');
+our $VERSION     = version->new('0.1.0');
 
 has regex => (
 	is  => 'rw',
@@ -77,11 +78,21 @@ has lasts => (
 	isa => 'HashRef[Str]',
 	default => sub{{}},
 );
+has smart => (
+	is  => 'rw',
+	isa => 'Bool',
+);
 
 sub make_regex {
 	my ($self) = @_;
 	my $re;
 	my $words = $self->re;
+
+	my $start = shift @{ $words };
+	if (!any {$start eq $_} qw/n b ss/) {
+		unshift @{ $words }, $start;
+		undef $start;
+	}
 
 	if ($self->whole) {
 		@{$words} = map { "(?<!\\w)$_(?!\\w)" } @{$words};
@@ -103,6 +114,13 @@ sub make_regex {
 		$re = "(?i:$re)";
 	}
 
+	$re =
+		  !defined $start ? $re
+		: $start eq 'n'   ? "function\\s+$re|$re\\s+=\\s+function"
+		: $start eq 'b'   ? "sub\\s+$re"
+		: $start eq 'ss'  ? "class\\s+$re"
+		:                   $re;
+
 	return $self->regex(qr/$re/);
 }
 
@@ -113,9 +131,9 @@ sub match {
 	$self->check_sub_matches($line);
 	$self->check_lasts($line);
 
-	my $match = $line =~ /$re/;
+	my ($match) = $line =~ /($re)/;
 
-	if ($match) {
+	if (defined $match) {
 		$self->current_count( $self->current_count + 1 );
 	}
 
@@ -204,7 +222,7 @@ regular expression to check lines of a file
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::RegexBuilder version 0.1.
+This documentation refers to File::CodeSearch::RegexBuilder version 0.1.0.
 
 =head1 SYNOPSIS
 

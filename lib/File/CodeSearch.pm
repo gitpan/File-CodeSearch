@@ -14,8 +14,9 @@ use IO::Handle;
 use File::chdir;
 use File::CodeSearch::Files;
 use Clone qw/clone/;
+use Path::Class qw/file dir/;
 
-our $VERSION     = version->new('0.0.1');
+our $VERSION     = version->new('0.1.0');
 
 has regex => (
 	is       => 'rw',
@@ -51,6 +52,22 @@ has suround_after => (
 	is      => 'rw',
 	isa     => 'Int',
 	default => 0,
+);
+has limit => (
+	is      => 'rw',
+	isa     => 'Int',
+	default => 0,
+);
+has links => (
+	is      => 'rw',
+	isa     => 'HashRef',
+	default => sub{{}},
+);
+has found => (
+	is      => 'ro',
+	isa     => 'Int',
+	default => 0,
+	writer  => '_found',
 );
 
 sub search {
@@ -88,7 +105,17 @@ sub _find {
 	FILE:
 	for my $file (@files) {
 		next FILE if !$self->files->file_ok("$dir$file");
+		last FILE if $self->limit && $self->found >= $self->limit;
 
+		if (-l "$dir$file") {
+			next FILE if !$self->files->symlinks;
+
+			my $real = -f "$dir$file" ? file("$dir$file") : dir("$dir$file");
+			$real = $real->absolute->resolve;
+			$self->links->{$real} ||= 0;
+
+			next FILE if $self->links->{$real}++;
+		}
 		if (-d "$dir$file") {
 			if ($self->recurse) {
 				$self->_find( $search, "$dir$file", $parent || $dir );
@@ -163,7 +190,9 @@ sub search_file {
 			push @sub_matches, clone [ $line, $file, $fh->input_line_number, %args ];
 		}
 		else {
+			$self->_found( $self->found + 1 );
 			$search->($line, $file, $fh->input_line_number, codesearch => $self, %args);
+			last LINE if $self->limit && $self->found >= $self->limit;
 		}
 
 		$args{last_line_no} = $fh->input_line_number;
@@ -172,13 +201,17 @@ sub search_file {
 	}
 
 	if (@{$self->regex->sub_matches} && $self->regex->sub_match) {
+		SUB:
 		for my $args (@sub_matches) {
+			$self->_found( $self->found + 1 );
 			$search->( @$args, codesearch => $self );
+			last SUB if $self->limit && $self->found >= $self->limit;
 		}
 	}
 	if (@after && ( ! @{$self->regex->sub_matches} || $self->regex->sub_match ) ) {
 		pop @after if $args{last_line_no} && $fh->input_line_number - $args{last_line_no} > $after_max - 1;
 		@before = ();
+		$self->_found( $self->found + 1 );
 		$search->(undef, $file, $fh->input_line_number, codesearch => $self, %args);
 	}
 
@@ -195,7 +228,7 @@ File::CodeSearch - Search file contents in code repositories
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch version 0.1.
+This documentation refers to File::CodeSearch version 0.1.0.
 
 =head1 SYNOPSIS
 

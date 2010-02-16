@@ -14,7 +14,7 @@ use Data::Dumper qw/Dumper/;
 use Carp;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.0.1');
+our $VERSION     = version->new('0.1.0');
 
 has ignore => (
 	is  => 'rw',
@@ -43,6 +43,11 @@ has symlinks => (
 	is  => 'rw',
 	isa => 'Bool',
 	default => 0,
+);
+has links => (
+	is  => 'rw',
+	isa => 'HashRef',
+	default => sub {{}},
 );
 
 Readonly my %TYPE_SUFFIXES => (
@@ -148,8 +153,6 @@ Readonly my %TYPE_SUFFIXES => (
 sub file_ok {
 	my ($self, $file) = @_;
 
-	return 0 if !$self->symlinks && -l $file;
-
 	for my $ignore (@{ $self->ignore }) {
 		return 0 if $file =~ /$ignore/;
 	}
@@ -227,7 +230,7 @@ File::CodeSearch::Files - <One-line description of module's purpose>
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Files version 0.1.
+This documentation refers to File::CodeSearch::Files version 0.1.0.
 
 
 =head1 SYNOPSIS

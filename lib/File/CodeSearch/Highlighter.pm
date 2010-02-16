@@ -13,7 +13,7 @@ use Carp;
 use English qw/ -no_match_vars /;
 use Term::ANSIColor qw/:constants/;
 
-our $VERSION     = version->new('0.0.1');
+our $VERSION     = version->new('0.1.0');
 
 extends 'File::CodeSearch::RegexBuilder';
 
@@ -40,6 +40,11 @@ has after_nomatch => (
 	isa     => 'Str',
 	default => RESET,
 );
+has limit => (
+	is      => 'rw',
+	isa     => 'Int',
+	default => '255',
+);
 
 sub make_highlight_re {
 	my ($self) = @_;
@@ -63,9 +68,23 @@ sub highlight {
 			$out .= $self->before_match . $parts[$i] . $self->after_match;
 		}
 		else {
-			$out .= $self->before_nomatch . $parts[$i] . $self->after_nomatch;
+			my $part = $parts[$i];
+			if (length $string > $self->limit) {
+				my $chars = int $self->limit / ( @parts - 1 ) / 2 / 2 - 5;
+				if ($chars * 2 < length $parts[$i]) {
+					my ($front) = $parts[$i] =~ /\A (.{$chars}) /xms;
+					my ($back)  = $parts[$i] =~ / (.{$chars}) \Z/xms;
+					warn "Front missing!\n" if !$front;
+					warn "Back missing!\n" if !$back;
+					$part = ($front || '') . RESET . RED . ON_BLACK  . ' ... ' . RESET . $self->before_nomatch . ($back || '');
+				}
+			}
+			$out .= $self->before_nomatch . $part . $self->after_nomatch;
 		}
 	}
+
+	$out .= RESET;
+	$out .= "\\N\n" if $string !~ /\n/xms;
 
 	return $out;
 }
@@ -80,7 +99,7 @@ File::CodeSearch::Highlighter - <One-line description of module's purpose>
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Highlighter version 0.1.
+This documentation refers to File::CodeSearch::Highlighter version 0.1.0.
 
 
 =head1 SYNOPSIS
