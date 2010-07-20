@@ -26,6 +26,7 @@ my $builder = Module::Build->new(
 		'Readonly'        => 0,
 		'Scalar::Util'    => 0,
 		'Term::ANSIColor' => 0,
+		'Term::Size::Any' => 0,
 		'version'         => 0,
 		'warnings'        => 0,
 	},
@@ -36,6 +37,12 @@ my $builder = Module::Build->new(
 	add_to_cleanup     => [ 'File-CodeSearch-*' ],
 	create_makefile_pl => 'traditional',
 	create_license     => 1,
+	meta_merge => {
+		resources => {
+			repository => 'git://github.com/ivanwills/File-CodeSearch.git',
+			bugtracker => 'http://rt.cpan.org/NoAuth/Bugs.html?Dist=File-CodeSearch',
+		},
+	},
 );
 
 $builder->create_build_script();

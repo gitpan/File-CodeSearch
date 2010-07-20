@@ -13,7 +13,7 @@ use Carp;
 use List::MoreUtils qw/any/;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.1.0');
+our $VERSION     = version->new('0.2.0');
 
 has regex => (
 	is  => 'rw',
@@ -89,7 +89,7 @@ sub make_regex {
 	my $words = $self->re;
 
 	my $start = shift @{ $words };
-	if (!any {$start eq $_} qw/n b ss/) {
+	if ($start && !any {$start eq $_} qw/n b ss/) {
 		unshift @{ $words }, $start;
 		undef $start;
 	}
@@ -116,7 +116,7 @@ sub make_regex {
 
 	$re =
 		  !defined $start ? $re
-		: $start eq 'n'   ? "function\\s+$re|$re\\s+=\\s+function"
+		: $start eq 'n'   ? "function(?:&?\\s+|\\s+&?\\s*)$re|$re\\s+=\\s+function"
 		: $start eq 'b'   ? "sub\\s+$re"
 		: $start eq 'ss'  ? "class\\s+$re"
 		:                   $re;
@@ -222,7 +222,7 @@ regular expression to check lines of a file
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::RegexBuilder version 0.1.0.
+This documentation refers to File::CodeSearch::RegexBuilder version 0.2.0.
 
 =head1 SYNOPSIS
 
