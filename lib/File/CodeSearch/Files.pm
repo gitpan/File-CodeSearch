@@ -14,7 +14,7 @@ use Data::Dumper qw/Dumper/;
 use Carp;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.2.0');
+our $VERSION     = version->new('0.5.0');
 
 has ignore => (
 	is  => 'rw',
@@ -64,7 +64,7 @@ Readonly my %TYPE_SUFFIXES => (
 			none     => 0,
 		},
 		c => {
-			definite => [qw/ [.]c$ [.]cpp$ [.]c++$ [.]h$ [.]hpp$ [.]hxx$ [.]h++$ /],
+			definite => [qw/ [.]c$ [.]cpp$ [.]c[+][+]$ [.]h$ [.]hpp$ [.]hxx$ [.]h[+][+]$ /],
 			possible => [qw/  /],
 			other_types => [qw/  /],
 			none     => 0,
@@ -127,6 +127,12 @@ Readonly my %TYPE_SUFFIXES => (
 			definite => [qw/  /],
 			possible => [qw/  /],
 			other_types => [qw/ perl php javascript /],
+			none     => 0,
+		},
+		programing => {
+			definite => [qw/  /],
+			possible => [qw/  /],
+			other_types => [qw/ scripting c /],
 			none     => 0,
 		},
 		package => {
@@ -230,7 +236,7 @@ File::CodeSearch::Files - <One-line description of module's purpose>
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Files version 0.2.0.
+This documentation refers to File::CodeSearch::Files version 0.5.0.
 
 
 =head1 SYNOPSIS

@@ -6,7 +6,8 @@ my $builder = Module::Build->new(
 	module_name       => 'File::CodeSearch',
 	license           => 'perl',
 	dist_author       => 'Ivan Wills <ivan.wills@gmail.com>',
-	dist_version_from => 'lib/File/CodeSearch.pm',
+	dist_version      => '0.5.0_1',
+	#dist_version_from => 'lib/File/CodeSearch.pm',
 	requires          => {
 		perl              => 5.006,
 		'Carp'            => 0,
@@ -37,11 +38,12 @@ my $builder = Module::Build->new(
 	add_to_cleanup     => [ 'File-CodeSearch-*' ],
 	create_makefile_pl => 'traditional',
 	create_license     => 1,
-	meta_merge => {
+	meta_merge         => {
 		resources => {
-			repository => 'git://github.com/ivanwills/File-CodeSearch.git',
+			repository => 'http://github.com/ivanwills/File-CodeSearch',
 			bugtracker => 'http://rt.cpan.org/NoAuth/Bugs.html?Dist=File-CodeSearch',
 		},
+		abstract => 'Search file contents in code repositories or other places',
 	},
 );
 

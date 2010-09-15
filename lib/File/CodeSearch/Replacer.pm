@@ -13,32 +13,41 @@ use Carp;
 use English qw/ -no_match_vars /;
 use Term::ANSIColor qw/:constants/;
 
-our $VERSION     = version->new('0.2.0');
+our $VERSION     = version->new('0.5.0');
 
 extends 'File::CodeSearch::Highlighter';
 
+has replace_re => (
+	is  => 'rw',
+);
 has replace => (
 	is  => 'rw',
 );
 has level => (
 	is => 'rw',
 );
+has all => (
+	is => 'rw',
+	isa => 'Int',
+);
 
-sub make_highlight_re {
+sub make_replace_re {
 	my ($self) = @_;
+
+	return $self->replace_re if $self->replace_re;
+
 	my $re = $self->regex || $self->make_regex;
 
 	# make sure that all brackets are for non capture groups
 	$re =~ s/ (?<! \\ | \[ ) [(] (?! [?] ) /(?:/gxms;
 
-	return $self->highlight_re($re);
+	return $self->replace_re($re);
 }
 
 sub highlight {
-die;
 	my ($self, $string) = @_;
 	my $re  = $self->highlight_re || $self->make_highlight_re;
-	my $replace_re = $self->highlight;;
+	my $replace_re = $self->make_replace_re;;
 	my $replace = $self->replace;
 	my $before = '';
 	my $after = '';
@@ -66,18 +75,7 @@ die;
 		$after  .= "\\N\n";
 	}
 
-	print "Change: $before\n";
-	print "To:     $after\n";
-	my $ans = prompt(-prompt => "[yna]", -default => 'n');
-
-	if ($ans eq 'a') {
-		$self->all(1);
-	}
-	elsif ($ans ne 'n') {
-		die "Save changes?";
-	}
-
-	return '';
+	return ( '', $before, $after, $changed );
 }
 
 1;
@@ -86,12 +84,11 @@ __END__
 
 =head1 NAME
 
-File::CodeSearch::Replacer - <One-line description of module's purpose>
+File::CodeSearch::Replacer - Sorts out file content that should be changed.
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Replacer version 0.2.0.
-
+This documentation refers to File::CodeSearch::Replacer version 0.5.0.
 
 =head1 SYNOPSIS
 
@@ -100,7 +97,6 @@ This documentation refers to File::CodeSearch::Replacer version 0.2.0.
    # Brief but working code example(s) here showing the most common usage(s)
    # This section will be as far as many users bother reading, so make it as
    # educational and exemplary as possible.
-
 
 =head1 DESCRIPTION
 
@@ -114,7 +110,9 @@ Return: File::CodeSearch::Replacer -
 
 Description:
 
-=head3 C<make_highlight_re ( $search, )>
+=head3 C<make_replace_re ( )>
+
+Creates the regular expression for replacing the searched for text.
 
 =head1 DIAGNOSTICS
 
