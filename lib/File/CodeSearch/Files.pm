@@ -10,16 +10,17 @@ use Moose;
 use warnings;
 use version;
 use Readonly;
-use Data::Dumper qw/Dumper/;
+use Data::Dumper;
 use Carp;
-use English qw/ -no_match_vars /;
+use English qw{ -no_match_vars };
+use Config::General;
 
-our $VERSION     = version->new('0.5.1');
+our $VERSION     = version->new('0.5.2');
 
 has ignore => (
     is  => 'rw',
     isa => 'ArrayRef[Str]',
-    default => sub{[qw{.git .bzr .svn CVS logs?(?:$|/) cover_db .orig$ .copy$ ~\d*$ _build blib \\.sw[po]$ [.]png$ [.]jpe?g$ [.]gif$ [.]swf$ [.]ttf$ }]},
+    default => sub{[qw{ [.]git [.]bzr [.]svn CVS logs?(?:$|/) cover_db [.]orig$ [.]copy$ ~\d*$ _build blib \\.sw[ponx]$ [.]png$ [.]jpe?g$ [.]gif$ [.]swf$ [.]ttf$ }, ',v$' ]},
 );
 has include => (
     is  => 'rw',
@@ -50,111 +51,145 @@ has links => (
     default => sub {{}},
 );
 
-Readonly my %TYPE_SUFFIXES => (
+has type_suffixes => (
+    is      => 'rw',
+    isa     => 'HashRef',
+    default => sub {{
         perl => {
-            definite => [qw/ [.]pl$ [.]pm$ [.]pod$ [.]PL$ /],
-            possible => [qw/ [.]t$ [.]cgi$ /],
-            other_types => [qw/  /],
-            none     => 1,
+            definite    => [qw{ [.]pl$ [.]pm$ [.]pod$ [.]PL$ }],
+            possible    => [qw{ [.]t$ [.]cgi$ }],
+            other_types => [qw{  }],
+            none        => 1,
+            bang        => 'perl',
         },
         php => {
-            definite => [qw/ [.]php$ /],
-            possible => [qw/ [.]lib$ [.]pkg$ [.]t$ /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]php$ }],
+            possible    => [qw{ [.]lib$ [.]pkg$ [.]t$ }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         c => {
-            definite => [qw/ [.]c$ [.]cpp$ [.]c[+][+]$ [.]h$ [.]hpp$ [.]hxx$ [.]h[+][+]$ /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]c$ [.]cpp$ [.]c[+][+]$ [.]h$ [.]hpp$ [.]hxx$ [.]h[+][+]$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         html => {
-            definite => [qw/ [.]html$ [.]xhtml$ /],
-            possible => [qw/ [.]xml$ /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]html$ [.]xhtml$ }],
+            possible    => [qw{ [.]xml$ }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         test => {
-            definite => [qw/ [.]t$ /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ \/tx?\/[.]t$ test[.]pl$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         svg => {
-            definite => [qw/ svg /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ svg }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         sql => {
-            definite => [qw/ [.]sql$ [.]plsql$ /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]sql$ [.]plsql$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         css => {
-            definite => [qw/ [.]css$ /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]css$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         javascript => {
-            definite => [qw/ [.]js$ /],
-            possible => [qw/ /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]js$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         js => {
-            definite => [qw/  /],
-            possible => [qw/  /],
-            other_types => [qw/ javascript /],
-            none     => 0,
+            definite    => [qw{  }],
+            possible    => [qw{  }],
+            other_types => [qw{ javascript }],
+            none        => 0,
         },
         xml => {
-            definite => [qw/xml$ [.]xsd$ [.]xslt$ [.]dtd/],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ xml$ [.]xsd$ [.]xslt$ [.]dtd }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         web => {
-            definite => [qw/  /],
-            possible => [qw/  /],
-            other_types => [qw/ html svg css javascript /],
-            none     => 0,
+            definite    => [qw{  }],
+            possible    => [qw{  }],
+            other_types => [qw{ html svg css javascript }],
+            none        => 0,
         },
         scripting => {
-            definite => [qw/  /],
-            possible => [qw/  /],
-            other_types => [qw/ perl php javascript /],
-            none     => 0,
+            definite    => [qw{  }],
+            possible    => [qw{  }],
+            other_types => [qw{ perl php javascript }],
+            none        => 0,
         },
         programing => {
-            definite => [qw/  /],
-            possible => [qw/  /],
-            other_types => [qw/ scripting c /],
-            none     => 0,
+            definite    => [qw{  }],
+            possible    => [qw{  }],
+            other_types => [qw{ scripting c }],
+            none        => 0,
         },
         package => {
-            definite => [qw/ [.]PL$ MANIFEST$ MANIFEST.SKIP$ Meta.yml$ README$ Changes$ /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]PL$ MANIFEST$ MANIFEST.SKIP$ META.yml$ MYMETA.yml$ README$ Changes$ Debian_CPANTS.txt$ Makefile$ LICENSE$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         config => {
-            definite => [qw/  /],
-            possible => [qw/ rc$ tab$ [.]cfg$ [.]conf$ [.]config$  [.]yml$ /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{  }],
+            possible    => [qw{ rc$ tab$ [.]cfg$ [.]conf$ [.]config$  [.]yml$ }],
+            other_types => [qw{  }],
+            none        => 0,
         },
         binary => {
-            definite => [qw/ [.]jpe?g$ [.]png$ [.]gif$ [.]bmp$ [.]swf$ [.]psd$ [.]exe$ /],
-            possible => [qw/  /],
-            other_types => [qw/  /],
-            none     => 0,
+            definite    => [qw{ [.]jpe?g$ [.]png$ [.]gif$ [.]bmp$ [.]swf$ [.]psd$ [.]exe$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
         },
-    );
+    }},
+);
 
+sub BUILD {
+    my ($self) = @_;
+
+    my $conf_file = "$ENV{HOME}/.csrc";
+
+    return if !-r $conf_file;
+
+    my $conf = Config::General->new($conf_file);
+    my %conf = $conf->getall();
+    $conf{file_types} ||= {};
+
+    for my $file_type ( keys %{ $conf{file_types} } ) {
+        $self->type_suffixes->{$file_type} ||= {};
+        for my $setting ( keys %{ $conf{file_types}{$file_type} } ) {
+            if ( $setting =~ s/^[+]//xms ) {
+                push @{ $self->type_suffixes->{$file_type}{$setting} }
+                     , ref $conf{file_types}{$file_type}{$setting} eq 'ARRAY'
+                     ? @{ $conf{file_types}{$file_type}{$setting} }
+                     : $conf{file_types}{$file_type}{$setting};
+            }
+            else {
+                $self->type_suffixes->{$file_type}{$setting}
+                     = ref $conf{file_types}{$file_type}{$setting} eq 'ARRAY'
+                     ? $conf{file_types}{$file_type}{$setting}
+                     : [ $conf{file_types}{$file_type}{$setting} ];
+            }
+        }
+    }
+}
 
 sub file_ok {
     my ($self, $file) = @_;
@@ -167,11 +202,14 @@ sub file_ok {
 
     my $possible = 0;
     my $matched = 0;
-    for my $type (@{ $self->include_type }) {
-        my $match = $self->types_match($file, $type);
-        return 0 if !$match;
-        $possible-- if $match == 2;
-        $matched++;
+    if ( @{ $self->include_type }) {
+        my $matched = 0;
+        for my $type (@{ $self->include_type }) {
+            my $match = $self->types_match($file, $type);
+            $possible-- if $match == 2;
+            $matched += $match;
+        }
+        return 0 if $matched <= 0;
     }
 
     if (!$matched) {
@@ -204,8 +242,9 @@ sub file_ok {
 sub types_match {
     my ($self, $file, $type) = @_;
 
-    my $types = \%TYPE_SUFFIXES;
+    my $types = $self->type_suffixes;
 
+    warn "No type $type" if !exists $types->{$type};
     return 0 if !exists $types->{$type};
 
     for my $suffix ( @{ $types->{$type}{definite} } ) {
@@ -214,6 +253,15 @@ sub types_match {
 
     for my $suffix ( @{ $types->{$type}{possible} } ) {
         return 2 if $file =~ /$suffix/;
+    }
+
+    if ( $types->{$type}{bang} ) {
+        open my $fh, '<', $file;
+        if ($fh) {
+            my $line = <$fh>;
+            close $fh;
+            return 3 if $line && $line =~ /$types->{$type}{bang}/;
+        }
     }
 
     return 1 if $types->{$type}{none} && $file !~ m{ [^/] [.] [^/]+ $}xms;
@@ -237,7 +285,7 @@ name positive & negative matching.
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Files version 0.5.1.
+This documentation refers to File::CodeSearch::Files version 0.5.2.
 
 =head1 SYNOPSIS
 
@@ -252,6 +300,10 @@ This documentation refers to File::CodeSearch::Files version 0.5.1.
 
 
 =head1 SUBROUTINES/METHODS
+
+=head2 C<BUILD>
+
+Applies any configuration details found in the ~/.csrc file
 
 =head2 C<file_ok ($file)>
 
