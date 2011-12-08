@@ -26,7 +26,7 @@ use File::CodeSearch::Files;
 use Config::General;
 use IO::Prompt qw/prompt/;
 
-our $VERSION = version->new('0.5.2');
+our $VERSION = version->new('0.5.5');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 my $REVERSE  = REVERSE;
 my $RESET    = RESET;
@@ -54,7 +54,7 @@ sub main {
     Getopt::Long::Configure('bundling');
     GetOptions(
         \%option,
-        'sre_all|all|A',
+        'sre_all|all|a',
         'sre_words|words|W',
         'sre_ignore_case|ignore|i',
         'sre_whole|whole|w',
@@ -75,16 +75,16 @@ sub main {
         'file_ignore=s',
         'file_ignore_add|d=s',
         'file_ignore_remove|I=s',
-        'out_suround|suround|s=n',
-        'out_suround_before|before|b=n',
-        'out_suround_after|after|a=n',
+        'out_suround|suround|context|C=n',
+        'out_suround_before|before|B=n',
+        'out_suround_after|after|A=n',
         'out_totals|totals|t',
         'out_files_only|files-only|f',
         'out_unique|unique|u!',
         'out_limit|limit=i',
         'project|P=s',
         'execute|execute-files|E=s',
-        'config|C=s',
+        'config|c=s',
         'bw|g',
         'verbose|v+',
         'man',
@@ -100,6 +100,10 @@ sub main {
         pod2usage( -verbose => 2 );
     }
     elsif ( $option{'help'} ) {
+        pod2usage( -verbose => 1 );
+    }
+    elsif ( !@ARGV ) {
+        warn "No search term specified\n";
         pod2usage( -verbose => 1 );
     }
 
@@ -287,8 +291,8 @@ sub searcher {
         }
         if ( $$out && ( !$option{sre_smart} || (my @tmp = split /\n/, $$out) >= $lines) ) {
             if ($option{sre_smart}) {
-                open my $tmp, '|-', 'less -R';
-                $fh = $tmp || $fh;
+                my $tmp;
+                $fh = $tmp if open $tmp, '|-', $ENV{CS_PAGER_COLOR} || 'less -Rx4SFX';
             }
             print {$fh} $$out;
             $$out = '';
@@ -351,6 +355,7 @@ sub params {
 sub parse_config {
     my ($opt) = @_;
 
+    $ENV{HOME} ||= $ENV{USERPROFILE};
     my $conf_file = $opt->{config} || "$ENV{HOME}/.csrc";
 
     return if !-r $conf_file;
@@ -399,7 +404,7 @@ cs - Search and/or replace text (with some intelligence)
 
 =head1 VERSION
 
-This documentation refers to cs version 0.5.2.
+This documentation refers to cs version 0.5.5.
 
 =head1 SYNOPSIS
 
@@ -408,10 +413,17 @@ This documentation refers to cs version 0.5.2.
    cr [option] search replace
 
  OPTIONS:
+  search         A perl regular expression. if it is written in multiple parts
+                 eg search this on the command line (ie no joinded together
+                 with quotes) the parts will be joined together with \s or
+                 if --all is used a regular expression will be written
+                 containing each part in every order, if --words the parts are
+                 seperated by .*'s.
+  replace        The value to substitute for the values found by search
+
   Search:
-   -A --all      Find all parts on regardless of order on the line
-   -W --words
-                 Similar to --all but with out the reordering
+   -a --all      Find all parts on regardless of order on the line
+   -W --words    Similar to --all but with out the reordering
    -i --ignore-case
                  Turn off case sensitive searching
    -w --whole    Makes the match only whole words (ie wraps with (?<\W) & (?=\W))
@@ -457,11 +469,11 @@ This documentation refers to cs version 0.5.2.
    -r --file-ignore-remove[=]string
                  Remove this regex to the list of ignored files
   Output:
-   -s --suround[=]int
-                 Show int lines before and after a match
-   -b --before[=]int
+   -C --context[=]int
+                 Show int lines of context before and after a match
+   -B --before[=]int
                  Show int lines before a match
-   -a --after[=]int
+   -A --after[=]int
                  Show int lines after a match
    -t --totals
                  Show the total number of lines & files matched
@@ -478,7 +490,7 @@ This documentation refers to cs version 0.5.2.
                  Run this command with the found files as arguments
    -P --project[=]string
                  Use the specified projects default settings
-   -C --config[=]file
+   -c --config[=]file
                  Use the specified file as the config file instead of the
                  deafult ~/.cs
 
@@ -577,6 +589,12 @@ existing file types.
 
 In the project section, you can add defaults specific to a project which can
 be specified on the command line as --project=proj
+
+=head2 Pager
+
+By default cs uses the command C<less -Rx4SFX> if it can run other wise it
+falls back just writing to C<STDOUT>. You can change this environment variable
+C<CS_PAGER_COLOR>
 
 =head1 DEPENDENCIES
 

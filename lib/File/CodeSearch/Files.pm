@@ -15,12 +15,13 @@ use Carp;
 use English qw{ -no_match_vars };
 use Config::General;
 
-our $VERSION     = version->new('0.5.2');
+our $VERSION     = version->new('0.5.5');
+our %warned_once;
 
 has ignore => (
     is  => 'rw',
     isa => 'ArrayRef[Str]',
-    default => sub{[qw{ [.]git [.]bzr [.]svn CVS logs?(?:$|/) cover_db [.]orig$ [.]copy$ ~\d*$ _build blib \\.sw[ponx]$ [.]png$ [.]jpe?g$ [.]gif$ [.]swf$ [.]ttf$ }, ',v$' ]},
+    default => sub{[qw{ ignore }]},
 );
 has include => (
     is  => 'rw',
@@ -55,6 +56,54 @@ has type_suffixes => (
     is      => 'rw',
     isa     => 'HashRef',
     default => sub {{
+        ignore => {
+            definite    => [qw{  }],
+            possible    => [qw{  }],
+            other_types => [qw{ build backups vcs images logs editors }],
+            none        => 0,
+        },
+        editors => {
+            definite    => [qw{ ~\d*$ }],
+            possible    => [qw{  }],
+            other_types => [qw{ vim }],
+            none        => 0,
+        },
+        vim => {
+            definite    => [qw{ (^|/)[.][^/]+[.]sw[ponx]$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
+        },
+        images => {
+            definite    => [qw{ [.]png$ [.]jpe?g$ [.]gif$ [.]swf$ [.]ttf$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
+        },
+        logs => {
+            definite    => [qw{ logs?(?:$|/) }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
+        },
+        backups => {
+            definite    => [qw{ [.]orig$ [.]copy$ ~\d*$ }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
+        },
+        vcs => {
+            definite    => [qw{ [.]git [.]bzr [.]svn CVS RCS }, ',v$' ],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
+        },
+        build => {
+            definite    => [qw{ _build blib }],
+            possible    => [qw{  }],
+            other_types => [qw{  }],
+            none        => 0,
+        },
         perl => {
             definite    => [qw{ [.]pl$ [.]pm$ [.]pod$ [.]PL$ }],
             possible    => [qw{ [.]t$ [.]cgi$ }],
@@ -164,6 +213,7 @@ has type_suffixes => (
 sub BUILD {
     my ($self) = @_;
 
+    $ENV{HOME} ||= $ENV{USERPROFILE};
     my $conf_file = "$ENV{HOME}/.csrc";
 
     return if !-r $conf_file;
@@ -195,7 +245,7 @@ sub file_ok {
     my ($self, $file) = @_;
 
     for my $ignore (@{ $self->ignore }) {
-        return 0 if $file =~ /$ignore/;
+        return 0 if $self->types_match($file, $ignore);
     }
 
     return 1 if -d $file;
@@ -203,7 +253,6 @@ sub file_ok {
     my $possible = 0;
     my $matched = 0;
     if ( @{ $self->include_type }) {
-        my $matched = 0;
         for my $type (@{ $self->include_type }) {
             my $match = $self->types_match($file, $type);
             $possible-- if $match == 2;
@@ -244,7 +293,7 @@ sub types_match {
 
     my $types = $self->type_suffixes;
 
-    warn "No type $type" if !exists $types->{$type};
+    warn "No type $type" if !exists $types->{$type} && !$warned_once{$type}++;
     return 0 if !exists $types->{$type};
 
     for my $suffix ( @{ $types->{$type}{definite} } ) {
@@ -256,8 +305,7 @@ sub types_match {
     }
 
     if ( $types->{$type}{bang} ) {
-        open my $fh, '<', $file;
-        if ($fh) {
+        if ( open my $fh, '<', $file ) {
             my $line = <$fh>;
             close $fh;
             return 3 if $line && $line =~ /$types->{$type}{bang}/;
@@ -285,7 +333,7 @@ name positive & negative matching.
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Files version 0.5.2.
+This documentation refers to File::CodeSearch::Files version 0.5.5.
 
 =head1 SYNOPSIS
 
