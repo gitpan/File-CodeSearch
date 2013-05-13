@@ -18,7 +18,7 @@ use Data::Dumper qw/Dumper/;
 use English qw/ -no_match_vars /;
 use FindBin qw/$Bin/;
 use Term::ANSIColor qw/:constants/;
-use Path::Class;
+use Path::Tiny;
 use File::Copy;
 use File::CodeSearch;
 use File::CodeSearch::Replacer;
@@ -26,7 +26,7 @@ use File::CodeSearch::Files;
 use Config::General;
 use IO::Prompt qw/prompt/;
 
-our $VERSION = version->new('0.5.5');
+our $VERSION = version->new('0.5.6');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 my $REVERSE  = REVERSE;
 my $RESET    = RESET;
@@ -59,7 +59,7 @@ sub main {
         'sre_ignore_case|ignore|i',
         'sre_whole|whole|w',
         'sre_sub_matches|contains|c=s@',
-        'sre_sub_no_matches|not-contains|notcontains|S=s@',
+        'sre_sub_not_matches|not-contains|notcontains|S=s@',
         'sre_last|last|L=s@',
         'sre_smart|smart|m',
         'replace|r=s',
@@ -109,7 +109,7 @@ sub main {
 
     # do stuff here
 
-    $option{path} = $option{path} ? [ map {split /:/, $_} @{$option{path}} ] : ['.'];
+    $option{path} = [ map {glob $_} map {split /:/, $_} $option{path} ? @{$option{path}} : ('.') ];
 
     if ($option{out_suround}) {
         $option{out_suround_before} ||= $option{out_suround};
@@ -320,11 +320,11 @@ sub save_replace {
         $answer->{save_all} = 1;
     }
     if ( $ans eq 'y' || $answer->{save_all} ) {
-        $file = file($file);
-        my $backup = $file->parent->file($file->basename . '~');
+        $file = path($file);
+        my $backup = $file->parent->child($file->basename . '~');
         my $i = 1;
         while (-f $backup) {
-            $backup = $file->parent->file($file->basename . '~' . $i);
+            $backup = $file->parent->child($file->basename . '~' . $i++);
         }
         move $file, $backup;
         my $fh = $file->openw;
@@ -404,7 +404,7 @@ cs - Search and/or replace text (with some intelligence)
 
 =head1 VERSION
 
-This documentation refers to cs version 0.5.5.
+This documentation refers to cs version 0.5.6.
 
 =head1 SYNOPSIS
 
@@ -441,8 +441,10 @@ This documentation refers to cs version 0.5.5.
                  String to replace found text with
   Files:
    -p --path[=]string
-                 A colon seperated list of directories to search in
-                 (Default current directory)
+                 A colon seperated list of directories to search in, which may
+                 include globing but you must quote so the shell doesn't do
+                 the globbing itself.
+                 (Default is current directory)
    -l --follow-symlinks
                  Follow symlinks to directories
       --no-follow-symlinks

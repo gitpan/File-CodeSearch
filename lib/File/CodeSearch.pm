@@ -14,9 +14,9 @@ use IO::Handle;
 use File::chdir;
 use File::CodeSearch::Files;
 use Clone qw/clone/;
-use Path::Class qw/file dir/;
+use Path::Tiny;
 
-our $VERSION     = version->new('0.5.5');
+our $VERSION     = version->new('0.5.6');
 
 has regex => (
     is       => 'rw',
@@ -112,8 +112,8 @@ sub _find {
         if (-l "$dir$file") {
             next FILE if !$self->files->symlinks;
 
-            my $real = -f "$dir$file" ? file("$dir$file") : dir("$dir$file");
-            $real = $real->absolute->resolve;
+            my $real = path("$dir$file");
+            $real = $real->realpath;
             $self->links->{$real} ||= 0;
 
             next FILE if $self->links->{$real}++;
@@ -233,7 +233,7 @@ File::CodeSearch - Search file contents in code repositories
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch version 0.5.5.
+This documentation refers to File::CodeSearch version 0.5.6.
 
 =head1 SYNOPSIS
 
