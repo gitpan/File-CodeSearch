@@ -4,7 +4,7 @@
       "Ivan Wills <ivan.wills@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4001, CPAN::Meta::Converter version 2.112621",
+   "generated_by" : "Module::Build version 0.4001, CPAN::Meta::Converter version 2.131560",
    "license" : [
       "perl_5"
    ],
@@ -16,54 +16,54 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "File::Spec" : 0,
-            "Test::More" : 0,
-            "Test::NoWarnings" : 0
+            "File::Spec" : "0",
+            "Test::More" : "0",
+            "Test::NoWarnings" : "0"
          }
       },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.40"
+            "Module::Build" : "0.38"
          }
       },
       "runtime" : {
          "requires" : {
-            "Carp" : 0,
-            "Clone" : 0,
-            "Config::General" : 0,
-            "File::Basename" : 0,
-            "File::Slurp" : 0,
-            "File::Spec" : 0,
-            "File::chdir" : 0,
-            "IO::Handle" : 0,
-            "IO::Prompt" : 0,
-            "List::MoreUtils" : 0,
-            "List::Util" : 0,
-            "Moose" : 0,
+            "Carp" : "0",
+            "Clone" : "0",
+            "Config::General" : "0",
+            "File::Basename" : "0",
+            "File::Slurp" : "0",
+            "File::Spec" : "0",
+            "File::chdir" : "0",
+            "IO::Handle" : "0",
+            "IO::Prompt" : "0",
+            "List::MoreUtils" : "0",
+            "List::Util" : "0",
+            "Moose" : "0",
             "Path::Tiny" : "0.005",
-            "Pod::Usage" : 0,
-            "Readonly" : 0,
-            "Scalar::Util" : 0,
-            "Term::ANSIColor" : 0,
-            "Term::Size::Any" : 0,
+            "Pod::Usage" : "0",
+            "Readonly" : "0",
+            "Scalar::Util" : "0",
+            "Term::ANSIColor" : "0",
+            "Term::Size::Any" : "0",
             "perl" : "5.006",
-            "version" : 0,
-            "warnings" : 0
+            "version" : "0",
+            "warnings" : "0"
          }
       }
    },
    "provides" : {
       "File::CodeSearch" : {
          "file" : "lib/File/CodeSearch.pm",
-         "version" : "v0.5.6"
+         "version" : "v0.5.7"
       },
       "File::CodeSearch::Files" : {
          "file" : "lib/File/CodeSearch/Files.pm",
-         "version" : "v0.5.6"
+         "version" : "v0.5.7"
       },
       "File::CodeSearch::Highlighter" : {
          "file" : "lib/File/CodeSearch/Highlighter.pm",
-         "version" : "v0.5.6"
+         "version" : "v0.5.7"
       },
       "File::CodeSearch::RegexBuilder" : {
          "file" : "lib/File/CodeSearch/RegexBuilder.pm",
@@ -71,7 +71,7 @@
       },
       "File::CodeSearch::Replacer" : {
          "file" : "lib/File/CodeSearch/Replacer.pm",
-         "version" : "v0.5.6"
+         "version" : "v0.5.7"
       }
    },
    "release_status" : "stable",
@@ -86,5 +86,5 @@
          "url" : "http://github.com/ivanwills/File-CodeSearch"
       }
    },
-   "version" : "v0.5.6"
+   "version" : "v0.5.7"
 }

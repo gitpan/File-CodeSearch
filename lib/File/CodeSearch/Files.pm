@@ -15,7 +15,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Config::General;
 
-our $VERSION     = version->new('0.5.6');
+our $VERSION     = version->new('0.5.7');
 our %warned_once;
 
 has ignore => (
@@ -99,7 +99,7 @@ has type_suffixes => (
             none        => 0,
         },
         build => {
-            definite    => [qw{ _build blib }],
+            definite    => [qw{ _build blib (MY)?META[.](yml|json) LICENCE Changes Build([.]PL)? MANIFEST([.]SKIP)? README }],
             possible    => [qw{  }],
             other_types => [qw{  }],
             none        => 0,
@@ -168,7 +168,7 @@ has type_suffixes => (
         xml => {
             definite    => [qw{ xml$ [.]xsd$ [.]xslt$ [.]dtd }],
             possible    => [qw{  }],
-            other_types => [qw{  }],
+            other_types => [qw{ svg }],
             none        => 0,
         },
         web => {
@@ -333,7 +333,7 @@ name positive & negative matching.
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Files version 0.5.6.
+This documentation refers to File::CodeSearch::Files version 0.5.7.
 
 =head1 SYNOPSIS
 

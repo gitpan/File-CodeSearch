@@ -26,7 +26,7 @@ use File::CodeSearch::Files;
 use Config::General;
 use IO::Prompt qw/prompt/;
 
-our $VERSION = version->new('0.5.6');
+our $VERSION = version->new('0.5.7');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 my $REVERSE  = REVERSE;
 my $RESET    = RESET;
@@ -83,6 +83,8 @@ sub main {
         'out_unique|unique|u!',
         'out_limit|limit=i',
         'project|P=s',
+        'yes|y',
+        'no',
         'execute|execute-files|E=s',
         'config|c=s',
         'bw|g',
@@ -195,13 +197,14 @@ sub main {
 sub searcher {
     my ($found, $out, $match, $hl, $lines, $fh) = @_;
     my $last_file = undef;
-    my $answer = {};
+    my $answer = { all => $option{yes}, save_all => $option{yes} };
     my $content = '';
 
     return sub {
         my ($line, $file, $line_no, %stuff ) = @_;
         confess "No line number provided!\n" if !defined $line_no;
         my $saved = 0;
+        my $post  = 0;
 
         if ( !$found->{$file} && !$option{out_unique} && !($option{out_files_only} && $option{out_totals}) ) {
             $$out .= "${file}\n";
@@ -253,6 +256,7 @@ sub searcher {
                 my $ans = '';
                 if ( $answer->{all} ) {
                     $$out .= sprintf $REVERSE . $BOLD . $ON_GREEN . '%4i: ' . $RESET . '%s', $line_no, $after;
+                    $post = 1;
                 }
                 else {
                     $$out .= sprintf $REVERSE . $BOLD . $ON_RED . 'From: ' . $RESET . '%s', $before;
@@ -260,17 +264,20 @@ sub searcher {
                     print {$fh} $$out;
                     $$out = '';
 
+                    warn Dumper $answer;
                     $ans = lc prompt(-prompt => $RESET . "Change? [yNa] ", -default => 'n', '-1t');
                     print "\n";
                 }
 
                 if ( $ans eq 'a') {
                     $answer->{all} = 1;
+                    $post = 1;
                 }
                 if ( $ans eq 'y' || $answer->{all} ) {
                     $stuff{lines}[-1] = $to;
                     $answer->{yes} = 1;
                     #warn $changed;
+                    $post = 1;
                 }
             }
         }
@@ -299,7 +306,7 @@ sub searcher {
             $option{sre_smart} = 0;
         }
 
-        return;
+        return $post;
     };
 }
 
@@ -321,12 +328,18 @@ sub save_replace {
     }
     if ( $ans eq 'y' || $answer->{save_all} ) {
         $file = path($file);
-        my $backup = $file->parent->child($file->basename . '~');
-        my $i = 1;
-        while (-f $backup) {
-            $backup = $file->parent->child($file->basename . '~' . $i++);
+
+        # Create a backup of the file if we don't appear to be in a revision control system environment
+        # TODO make this smarter to check that the files are currently part of the rcs system
+        if ( !grep { -d $_ } qw/ .git .bzr .svn CSV RCS / ) {
+            my $backup = $file->parent->child($file->basename . '~');
+            my $i = 1;
+            while (-f $backup) {
+                $backup = $file->parent->child($file->basename . '~' . $i++);
+            }
+            move $file, $backup;
         }
-        move $file, $backup;
+
         my $fh = $file->openw;
         print {$fh} $content;
         close $fh;
@@ -404,7 +417,7 @@ cs - Search and/or replace text (with some intelligence)
 
 =head1 VERSION
 
-This documentation refers to cs version 0.5.6.
+This documentation refers to cs version 0.5.7.
 
 =head1 SYNOPSIS
 
