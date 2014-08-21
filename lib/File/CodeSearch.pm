@@ -16,7 +16,7 @@ use File::CodeSearch::Files;
 use Clone qw/clone/;
 use Path::Tiny;
 
-our $VERSION     = version->new('0.5.7');
+our $VERSION     = version->new('0.5.8');
 
 has regex => (
     is       => 'rw',
@@ -39,6 +39,11 @@ has breadth => (
     default => 0,
 );
 has depth => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
+);
+has quiet => (
     is      => 'rw',
     isa     => 'Bool',
     default => 0,
@@ -87,11 +92,12 @@ sub _find {
     my @files;
     $dir =~ s{/$}{};
 
-    return if !-d $dir;
+    # check if we have a directory and we can change into it
+    return if !-d $dir || !-r $dir || !-x $dir;
 
     {
         local $CWD = $dir;
-        opendir my $dirh, '.' or warn "Could not open the directory '$dir': $OS_ERROR ($CWD)\n" and return;
+        opendir my $dirh, '.' or $self->_message(directory => $dir, $OS_ERROR) and return;
         @files = sort _alpha_num grep { $_ ne '.' && $_ ne '..' } readdir $dirh;
 
         if ($self->breadth) {
@@ -154,7 +160,7 @@ sub _depth {
 sub search_file {
     my ($self, $search, $file, $parent) = @_;
 
-    open my $fh, '<', $file or warn "Could not open the file '$file': $OS_ERROR\n" and return;
+    open my $fh, '<', $file or $self->_message(file => $file, $OS_ERROR) and return;
 
     $self->regex->reset_file;
     $self->regex->current_file($file);
@@ -234,6 +240,16 @@ sub search_file {
     return;
 }
 
+sub _message {
+    my ($self, $type, $name, $error) = @_;
+
+    if ( !$self->quiet ) {
+        warn "Could not open the $type '$name': $error\n";
+    }
+
+    return 1;
+}
+
 1;
 
 __END__
@@ -244,7 +260,7 @@ File::CodeSearch - Search file contents in code repositories
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch version 0.5.7.
+This documentation refers to File::CodeSearch version 0.5.8.
 
 =head1 SYNOPSIS
 
