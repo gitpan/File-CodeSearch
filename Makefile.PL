@@ -31,8 +31,7 @@ WriteMakefile
                  },
   'INSTALLDIRS' => 'site',
   'EXE_FILES' => [
-                   'bin/cs',
-                   'bin/cs~'
+                   'bin/cs'
                  ],
   'PL_FILES' => {}
 )

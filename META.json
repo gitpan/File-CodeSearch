@@ -55,15 +55,15 @@
    "provides" : {
       "File::CodeSearch" : {
          "file" : "lib/File/CodeSearch.pm",
-         "version" : "v0.5.8"
+         "version" : "v0.5.9"
       },
       "File::CodeSearch::Files" : {
          "file" : "lib/File/CodeSearch/Files.pm",
-         "version" : "v0.5.8"
+         "version" : "v0.5.9"
       },
       "File::CodeSearch::Highlighter" : {
          "file" : "lib/File/CodeSearch/Highlighter.pm",
-         "version" : "v0.5.8"
+         "version" : "v0.5.9"
       },
       "File::CodeSearch::RegexBuilder" : {
          "file" : "lib/File/CodeSearch/RegexBuilder.pm",
@@ -71,7 +71,7 @@
       },
       "File::CodeSearch::Replacer" : {
          "file" : "lib/File/CodeSearch/Replacer.pm",
-         "version" : "v0.5.8"
+         "version" : "v0.5.9"
       }
    },
    "release_status" : "stable",
@@ -86,5 +86,5 @@
          "url" : "http://github.com/ivanwills/File-CodeSearch"
       }
    },
-   "version" : "v0.5.8"
+   "version" : "v0.5.9"
 }
