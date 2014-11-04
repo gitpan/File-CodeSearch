@@ -25,7 +25,7 @@ WriteMakefile
                    'Term::ANSIColor' => 0,
                    'Term::Size::Any' => 0,
                    'Test::More' => 0,
-                   'Test::NoWarnings' => 0,
+                   'Test::Warnings' => '0.016',
                    'version' => 0,
                    'warnings' => 0
                  },

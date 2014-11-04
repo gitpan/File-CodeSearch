@@ -14,7 +14,7 @@ use English qw/ -no_match_vars /;
 use Term::ANSIColor qw/:constants/;
 use Term::Size::Any;
 
-our $VERSION     = version->new('0.5.9');
+our $VERSION     = version->new('0.6.0');
 
 extends 'File::CodeSearch::RegexBuilder';
 
@@ -70,7 +70,7 @@ sub make_highlight_re {
 
     return $self->highlight_re if $self->highlight_re;
 
-    my $re = $self->regex || $self->make_regex;
+    my $re = $self->make_regex;
 
     # make sure that all brackets are for non capture groups
     $re =~ s/ (?<! \\ | \[ ) [(] (?! [?] ) /(?:/gxms;
@@ -157,7 +157,7 @@ File::CodeSearch::Highlighter - Highlights matched parts of a line.
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Highlighter version 0.5.9.
+This documentation refers to File::CodeSearch::Highlighter version 0.6.0.
 
 
 =head1 SYNOPSIS
