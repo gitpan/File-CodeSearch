@@ -13,7 +13,7 @@ use Carp;
 use English qw/ -no_match_vars /;
 use Term::ANSIColor qw/:constants/;
 
-our $VERSION = version->new('0.7.0');
+our $VERSION = version->new('0.7.1');
 
 extends 'File::CodeSearch::Highlighter';
 
@@ -88,7 +88,7 @@ File::CodeSearch::Replacer - Sorts out file content that should be changed.
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch::Replacer version 0.7.0.
+This documentation refers to File::CodeSearch::Replacer version 0.7.1.
 
 =head1 SYNOPSIS
 
@@ -99,6 +99,28 @@ This documentation refers to File::CodeSearch::Replacer version 0.7.0.
    # educational and exemplary as possible.
 
 =head1 DESCRIPTION
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<replace_re>
+
+The regular expression to replace text with
+
+=item C<replace>
+
+The text to be used for replacement
+
+=item C<level>
+
+??
+
+=item C<all (Int)>
+
+??
+
+=back
 
 =head1 SUBROUTINES/METHODS
 
