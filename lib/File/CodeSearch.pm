@@ -9,14 +9,15 @@ package File::CodeSearch;
 use Moose;
 use warnings;
 use version;
+use autodie;
 use English qw/ -no_match_vars /;
 use IO::Handle;
 use File::chdir;
-use File::CodeSearch::Files;
+use File::TypeCategories;
 use Clone qw/clone/;
 use Path::Tiny;
 
-our $VERSION     = version->new('0.6.0');
+our $VERSION = version->new('0.7.0');
 
 has regex => (
     is       => 'rw',
@@ -25,8 +26,8 @@ has regex => (
 );
 has files => (
     is      => 'rw',
-    isa     => 'File::CodeSearch::Files',
-    default => sub { File::CodeSearch::Files->new },
+    isa     => 'File::TypeCategories',
+    default => sub { File::TypeCategories->new },
 );
 has recurse => (
     is      => 'rw',
@@ -97,7 +98,7 @@ sub _find {
 
     {
         local $CWD = $dir;
-        opendir my $dirh, '.' or $self->_message(directory => $dir, $OS_ERROR) and return;
+        opendir my $dirh, '.';
         @files = sort _alpha_num grep { $_ ne '.' && $_ ne '..' } readdir $dirh;
 
         if ($self->breadth) {
@@ -260,7 +261,7 @@ File::CodeSearch - Search file contents in code repositories
 
 =head1 VERSION
 
-This documentation refers to File::CodeSearch version 0.6.0.
+This documentation refers to File::CodeSearch version 0.7.0.
 
 =head1 SYNOPSIS
 
@@ -294,7 +295,7 @@ and must be created with the search options desired, note you can also use
 the C<F::C::Highlighter> and C<F::C::Replacer> modules interchangeably with
 C<F::C::RegexBuilder>.
 
-=item C<files> - L<File::CodeSearch::Files>
+=item C<files> - L<File::TypeCategories>
 
 If you desire to limit files by file type, name, symlink status pass this
 object, other wise a default object will be created.

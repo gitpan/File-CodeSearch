@@ -12,6 +12,7 @@ WriteMakefile
                    'File::Basename' => 0,
                    'File::Slurp' => 0,
                    'File::Spec' => 0,
+                   'File::TypeCategories' => '0.01',
                    'File::chdir' => 0,
                    'IO::Handle' => 0,
                    'IO::Prompt' => 0,
@@ -26,6 +27,7 @@ WriteMakefile
                    'Term::Size::Any' => 0,
                    'Test::More' => 0,
                    'Test::Warnings' => '0.016',
+                   'autodie' => 0,
                    'version' => 0,
                    'warnings' => 0
                  },

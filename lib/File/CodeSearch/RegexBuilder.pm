@@ -13,7 +13,7 @@ use Carp;
 use List::MoreUtils qw/any/;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.5.6');
+our $VERSION = version->new('0.5.6');
 
 has regex => (
     is  => 'rw',
@@ -91,18 +91,23 @@ sub make_regex {
     my $words = $self->re;
 
     my $start = shift @{ $words };
-    if ($start && !any {$start eq $_} qw/n b ss/) {
+    return $self->regex(qr//) if !defined $start;
+
+    if (!any {$start eq $_} qw/n b ss/) {
         unshift @{ $words }, $start;
         undef $start;
     }
 
     if ($self->whole) {
-        @{$words} = map { "(?<!\\w)$_(?!\\w)" } @{$words};
+        @{$words} = map { "\\b$_\\b" } @{$words};
     }
 
     if ($self->all) {
         if (@{ $words } == 2 ) {
             $re = "$words->[0].*$words->[1]|$words->[1].*$words->[0]";
+        }
+        else {
+            $re = join ' ', @$words;
         }
     }
     elsif ( $self->words ) {
@@ -120,8 +125,7 @@ sub make_regex {
           !defined $start ? $re
         : $start eq 'n'   ? "function(?:&?\\s+|\\s+&?\\s*)$re|$re\\s+=\\s+function"
         : $start eq 'b'   ? "sub\\s+$re"
-        : $start eq 'ss'  ? "class\\s+$re"
-        :                   $re;
+        :                   "class\\s+$re";
 
     return $self->regex(qr/$re/);
 }
@@ -153,13 +157,15 @@ sub check_sub_matches {
     return if $self->sub_not_match;
 
     for my $match_re (@$matches) {
-        $match ||= $line =~ /$match_re/;
+        $match = $line =~ /$match_re/;
+        last if $match;
     }
 
     $self->sub_match($match);
 
     for my $not_match_re (@$not_matches) {
-        $not_match ||= $line =~ /$not_match_re/;
+        $not_match = $line =~ /$not_match_re/;
+        last if $not_match;
     }
 
     $self->sub_not_match($not_match);
@@ -173,10 +179,10 @@ sub check_lasts {
     if ($self->last) {
         for my $last (@{ $self->last }) {
             my ($match) =
-                  $last eq 'function' ? $line =~ /function \s+ (?: & \s*)? (\w+)/xms
-                : $last eq 'class'    ? $line =~ /class \s+ (\w+)/xms
-                : $last eq 'sub'      ? $line =~ /sub \s+ (\w+)/xms
-                :                       $line =~ /$last \s+ (\w+)/xms;
+                  $last eq 'function' ? $line =~ /function \s+ (?: & \s*)? ([\w-]+)/xms
+                : $last eq 'class'    ? $line =~ /class \s+ ([\w-]+)/xms
+                : $last eq 'sub'      ? $line =~ /sub \s+ ([\w-]+)/xms
+                :                       $line =~ /$last \s+ ([\w-]+)/xms;
             $self->lasts->{$last} = $match if $match;
         }
     }
@@ -190,7 +196,7 @@ sub get_last_found {
 
     return '' if ! %{$self->lasts};
 
-    for my $last (keys %{$self->lasts} ) {
+    for my $last (sort keys %{$self->lasts} ) {
         $out .= "$last " . $self->lasts->{$last} . "\n";
     }
 
@@ -234,6 +240,76 @@ This documentation refers to File::CodeSearch::RegexBuilder version 0.5.6.
    # educational and exemplary as possible.
 
 =head1 DESCRIPTION
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<regex>
+
+The compiled regex
+
+=item C<re (ArrayRef)>
+
+The strings to compile the regular expression from
+
+=item C<whole (Bool)>
+
+Makes sure each element of C<re> is matched as a whole word
+
+=item C<all (Bool)>
+
+Makes sure that the elements of C<re> are matched in any order (currently only two elements supported)
+
+=item C<words (Bool)>
+
+Match each word separated by arbitrary number of characters (default separation is one space)
+
+=item C<ignore_case (Bool)>
+
+Ignore case in the final regex
+
+=item C<files (HashRef)>
+
+Stores a count of matches in each file
+
+=item C<current_file>
+
+Reference to the current file being searched
+
+=item C<current_count (Int)>
+
+The number of matches found in the currently searched file
+
+=item C<sub_matches (ArrayRef[Str])>
+
+Terms to search on that the file should also contain to be considered to have matched
+
+=item C<sub_match (Bool)>
+
+Stores if a sub match has been found
+
+=item C<sub_not_matches (ArrayRef[Str])>
+
+Terms to search on that the file should not contain to be considered to have matched
+
+=item C<sub_not_match (Bool)>
+
+Stores if a not sub match has been found
+
+=item C<last (ArrayRef[Str])>
+
+A list of types to keep track of for context of a match (eg the last function, class or sub)
+
+=item C<lasts (HashRef[Str])>
+
+The current state of requested "last" types
+
+=item C<smart (Bool)>
+
+Create smart regular expression
+
+=back
 
 =head1 SUBROUTINES/METHODS
 

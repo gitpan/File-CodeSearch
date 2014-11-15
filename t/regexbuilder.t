@@ -11,10 +11,13 @@ simple();
 whole();
 array();
 array_all();
+ignore();
+shortcuts();
 array_words();
 match();
 sub_match();
 reset_file();
+last_match();
 done_testing();
 
 sub simple {
@@ -38,7 +41,7 @@ sub whole {
         whole          => 1,
     );
     $re->make_regex;
-    is($re->regex, qr/(?<!\w)test(?!\w)/, 'whole');
+    is($re->regex, qr/\btest\b/, 'whole');
 
 }
 
@@ -54,7 +57,7 @@ sub array {
         whole          => 1,
     );
     $re->make_regex;
-    is($re->regex, qr/(?<!\w)test(?!\w) (?<!\w)words(?!\w)/, 'simple');
+    is($re->regex, qr/\btest\b \bwords\b/, 'simple');
 
 }
 
@@ -72,7 +75,7 @@ sub array_words {
         whole          => 1,
     );
     $re->make_regex;
-    is($re->regex, qr/(?<!\w)test(?!\w).*(?<!\w)words(?!\w)/, 'simple');
+    is($re->regex, qr/\btest\b.*\bwords\b/, 'simple');
 
 }
 
@@ -90,7 +93,52 @@ sub array_all {
         whole          => 1,
     );
     $re->make_regex;
-    is($re->regex, qr/(?<!\w)test(?!\w).*(?<!\w)words(?!\w)|(?<!\w)words(?!\w).*(?<!\w)test(?!\w)/, 'simple');
+    is($re->regex, qr/\btest\b.*\bwords\b|\bwords\b.*\btest\b/, 'simple');
+
+    $re = File::CodeSearch::RegexBuilder->new(
+        re             => ['test'],
+        all            => 1,
+        whole          => 1,
+    );
+    $re->make_regex;
+    is($re->regex, qr/\btest\b/, 'simple');
+
+}
+
+sub ignore {
+    my $re = File::CodeSearch::RegexBuilder->new(
+        re             => ['test', 'words'],
+        ignore_case    => 1,
+    );
+    $re->make_regex;
+    is($re->regex, qr/(?i:test words)/, 'ignore');
+
+}
+
+sub shortcuts {
+    my $re = File::CodeSearch::RegexBuilder->new(
+        re => ['b', 'test'],
+    );
+    $re->make_regex;
+    is($re->regex, qr/sub\s+test/, 'shortcut b for sub');
+
+    $re = File::CodeSearch::RegexBuilder->new(
+        re => ['n', 'test'],
+    );
+    $re->make_regex;
+    is($re->regex, qr/function(?:&?\s+|\s+&?\s*)test|test\s+=\s+function/, 'shortcut n for function');
+
+    $re = File::CodeSearch::RegexBuilder->new(
+        re => ['ss', 'test'],
+    );
+    $re->make_regex;
+    is($re->regex, qr/class\s+test/, 'shortcut ss for class');
+
+    $re = File::CodeSearch::RegexBuilder->new(
+        re => [],
+    );
+    $re->make_regex;
+    is($re->regex, qr//, 'empty');
 
 }
 
@@ -118,9 +166,71 @@ sub match {
 
 sub sub_match {
     my $re = File::CodeSearch::RegexBuilder->new(
-        re             => ['test'],
+        re              => ['test'],
+        sub_matches     => ['a'],
+        sub_not_matches => ['q'],
     );
-    $re->sub_matches(['a']);
+
+    $re->check_sub_matches('My test line');
+    ok !$re->sub_match, 'No matches';
+
+    $re->check_sub_matches('A test line for a');
+    is $re->sub_match, 1, 'Matches';
+
+    $re->check_sub_matches('An test line for a');
+    is $re->sub_match, 1, 'Matches';
+
+    $re->sub_match(0);
+    ok !$re->sub_not_match, 'No not matches';
+
+    $re->check_sub_matches('A test line for q');
+    is $re->sub_not_match, 1, 'Not matches';
+
+    $re->check_sub_matches('An test line for q');
+    is $re->sub_not_match, 1, 'Not matches';
+
+    return;
+}
+
+sub last_match {
+    my $re = File::CodeSearch::RegexBuilder->new(
+        re   => ['test'],
+        last => ['sub'],
+    );
+    $re->match('my test match');
+
+    is $re->get_last_found, '', 'No last found';
+
+    $re->match("sub some_func {\n");
+    $re->match("my test match\n");
+
+    is $re->get_last_found, "sub some_func\n", 'last found as some_func';
+
+    push @{ $re->last }, 'class';
+
+    $re->match("class MyClass\n");
+    $re->match("sub some_func {\n");
+    $re->match("my test match\n");
+
+    is $re->get_last_found, "class MyClass\nsub some_func\n", 'last found as some_func';
+
+    $re->last([ 'class', 'function']);
+
+    $re->reset_file('');
+    $re->match("class MyClass\n");
+    $re->match("function some_func {\n");
+    $re->match("my test match\n");
+
+    is $re->get_last_found, "class MyClass\nfunction some_func\n", 'last found as some_func';
+
+    $re->reset_file('');
+    $re->last(['other']);
+
+    $re->match("class MyClass\n");
+    $re->match("other to_be_known {\n");
+    $re->match("my test match\n");
+
+    is $re->get_last_found, "other to_be_known\n", 'last found as some_func';
 
     return;
 }
